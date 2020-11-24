@@ -2,9 +2,23 @@
 #ifndef _PCD8544_H
 #define _PCD8544_H
 
-#include <SPI.h>
+#if defined(ARDUINO_ARCH_SAMD) || defined(__SAM3X8E__)
 
-#if defined(ARDUINO_ARCH_AVR) ||    \
+// Arduino Due
+
+#define PROGMEM
+
+#include "Arduino.h"
+
+#define GETPROGBYTE(data, x)   data[x]
+
+#define cbi(reg, bitmask) *reg&=~bitmask
+#define sbi(reg, bitmask) *reg|= bitmask
+
+typedef volatile uint32_t PinReg;
+typedef uint32_t PinMask;
+
+#elif defined(ARDUINO_ARCH_AVR) ||    \
     defined(__AVR_ATmega328P__) ||  \
     defined(__AVR_ATmega1280__) ||  \
     defined(__AVR_ATmega2560__) ||  \
@@ -16,21 +30,46 @@
 // Arduino Leonardo
 // Arduino Decimilia and older
 
+#ifdef __AVR__
+#include <avr/pgmspace.h>
+#endif
+
 #include "Arduino.h"
+
+#include <SPI.h>
 
 #define GETPROGBYTE(data, x) pgm_read_byte(data + x)
 
 #define cbi(reg, bitmask) *reg&=~bitmask
 #define sbi(reg, bitmask) *reg|= bitmask
 
-#define resetLCD sbi(P_DC, B_DC); sbi(P_DIN, B_DIN); sbi(P_SCLK, B_SCLK); sbi(P_SCE, B_SCE); cbi(P_RST, B_RST); delay(10); sbi(P_RST, B_RST)
+typedef volatile uint8_t PinReg;
+typedef uint8_t PinMask;
 
-typedef volatile uint8_t PortReg;
+#elif defined(__PIC32MX__)
+
+// PIC32
+
+#define PROGMEM
+
+#include "WProgram.h"
+
+#define GETPROGBYTE(data, x)   data[x]
+
+#define cbi(reg, bitmask) (*(reg + 1)) = bitmask
+#define sbi(reg, bitmask) (*(reg + 2)) = bitmask
+
+typedef volatile uint32_t PortReg;
 typedef uint8_t PortMask;
 
+#else
+typedef volatile uint32_t PinReg;
+typedef uint32_t PinMask;
 #endif
 
-
+#ifndef _BV
+#define _BV(x) (1 << (x))
+#endif
 
 // When defined, only changed pixels within the bunding box are updated
 #define PCD8544_USE_BOUNDINGBOX
@@ -76,16 +115,17 @@ class PCD8544 {
 
 private:
 
-    // Register references
-    PortReg *P_RST, *P_SCE, *P_DC, *P_DIN, *P_SCLK;
+    // Pin references
+    PinReg *P_RST, *P_SCE, *P_DC, *P_DIN, *P_SCLK;
 
-    // Register masks
-    PortMask B_RST, B_SCE, B_DC, B_DIN, B_SCLK;
+    // Pin masks
+    PinMask B_RST, B_SCE, B_DC, B_DIN, B_SCLK;
 
     // Pin numbers
     int8_t _rst, _sce, _dc, _din, _sclk;
 
-    uint8_t buffer[PCD8544_SCREEN_WIDTH * PCD8544_SCREEN_HEIGHT / 8];
+    // TODO: ship a funny default image
+    uint8_t buffer[PCD8544_SCREEN_WIDTH * PCD8544_SCREEN_HEIGHT / 8] = {0};
 
 #ifdef PCD8544_USE_BOUNDINGBOX
     uint8_t boundMinX, boundMaxX, boundMinY, boundMaxY;
@@ -109,7 +149,7 @@ public:
     PCD8544(int8_t rst, int8_t dc, int8_t din, int8_t sclk) : _rst(rst), _sce(-1), _dc(dc), _din(din), _sclk(sclk) {
     }
 
-    // Hardware SPI with hardware controlled SCK (SCLK) and MOSI (DIN). CS is controlled by IO pi
+    // Hardware SPI with hardware controlled SCK (SCLK) and MOSI (DIN). SCE is controlled by IO pin
     PCD8544(int8_t rst, int8_t sce, int8_t dc) : _rst(rst), _sce(sce), _dc(dc), _din(-1), _sclk(-1) {
     }
 

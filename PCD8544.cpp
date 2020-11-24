@@ -15,7 +15,7 @@ void PCD8544::init(uint8_t contrast, uint8_t bias, uint8_t tempCoeff) {
         pinMode(_din, OUTPUT);
         pinMode(_sclk, OUTPUT);
 
-        // Set software SPI ports and masks
+        // Set software SPI pins and masks
         P_DIN = portOutputRegister(digitalPinToPort(_din));
         B_DIN = digitalPinToBitMask(_din);
         P_SCLK = portOutputRegister(digitalPinToPort(_sclk));
@@ -35,18 +35,17 @@ void PCD8544::init(uint8_t contrast, uint8_t bias, uint8_t tempCoeff) {
     if (_sce > 0)
         pinMode(_sce, OUTPUT);
 
-    // toggle RST low to reset LCD to a known state
-    resetLCD;
+    // toggle RST to reset to a known state
+    cbi(P_RST, B_RST);
+    delay(10);
+    sbi(P_RST, B_RST);
 
     // Set presets 
-    _command(PCD8544_FUNCTIONSET | PCD8544_EXTENDED_INSTRUCTION | PCD8544_ADDRESSING);
-    _command(PCD8544_SETVOP | contrast); // Set Vop
-    _command(PCD8544_SETTEMP | tempCoeff); // 0x00, 0x04?
-    _command(PCD8544_SETBIAS | bias); // 0x13 or 0x14: 1:48 or 1:65?
+    setContrast(contrast);
+    setTempCoeff(tempCoeff);
+    setBias(bias);
 
-    // Set display to Normal
-    _command(PCD8544_FUNCTIONSET | PCD8544_BASIC_INSTRUCTION | PCD8544_ADDRESSING);
-    _command(PCD8544_DISPLAYCONTROL | PCD8544_DISPLAY_NORMAL);
+    setDisplayMode(PCD8544_DISPLAY_NORMAL);
 
     _updateBoundingBox(0, 0, PCD8544_SCREEN_WIDTH - 1, PCD8544_SCREEN_HEIGHT - 1);
 
@@ -56,8 +55,8 @@ void PCD8544::init(uint8_t contrast, uint8_t bias, uint8_t tempCoeff) {
 
 void PCD8544::setContrast(uint8_t contrast) {
 
-    if (contrast > 0x7F) {
-        contrast = 0x7F;
+    if (contrast > 127) {
+        contrast = 127;
     }
 
     _command(PCD8544_FUNCTIONSET | PCD8544_EXTENDED_INSTRUCTION | PCD8544_ADDRESSING); // enter extended instructions
@@ -66,6 +65,11 @@ void PCD8544::setContrast(uint8_t contrast) {
 }
 
 void PCD8544::setBias(uint8_t bias) {
+
+    if (bias > 7) {
+        bias = 7;
+    }
+
     _command(PCD8544_FUNCTIONSET | PCD8544_EXTENDED_INSTRUCTION | PCD8544_ADDRESSING); // enter extended instructions
     _command(PCD8544_SETBIAS | bias);
     _command(PCD8544_FUNCTIONSET | PCD8544_BASIC_INSTRUCTION | PCD8544_ADDRESSING); // enter normal instructions
@@ -88,11 +92,11 @@ void PCD8544::setPixel(uint8_t x, uint8_t y, uint8_t color) {
         return;
 
     if (color == 1)
-        PCD8544_BUFFER(x, y)|= (1 << y % 8);
+        PCD8544_BUFFER(x, y)|= _BV(y % 8);
     else if (color == 0)
-        PCD8544_BUFFER(x, y)&=~(1 << y % 8);
+        PCD8544_BUFFER(x, y)&=~_BV(y % 8);
     else
-        PCD8544_BUFFER(x, y)^= (1 << y % 8);
+        PCD8544_BUFFER(x, y)^= _BV(y % 8);
 
     _updateBoundingBox(x, y, x, y);
 }
@@ -122,37 +126,37 @@ void PCD8544::strokeRect(uint8_t x1, uint8_t y1, uint8_t x2, uint8_t y2, uint8_t
     if (color == 1) {
 
         for (uint8_t x = x1; x <= x2 && x < PCD8544_SCREEN_WIDTH; x++) {
-            PCD8544_BUFFER(x, y1)|= (1 << y1 % 8);
-            PCD8544_BUFFER(x, y2)|= (1 << y2 % 8);
+            PCD8544_BUFFER(x, y1)|= _BV(y1 % 8);
+            PCD8544_BUFFER(x, y2)|= _BV(y2 % 8);
         }
 
         for (uint8_t y = y1 + 1; y < y2 && y < PCD8544_SCREEN_HEIGHT; y++) {
-            PCD8544_BUFFER(x1, y)|= (1 << y % 8);
-            PCD8544_BUFFER(x2, y)|= (1 << y % 8);
+            PCD8544_BUFFER(x1, y)|= _BV(y % 8);
+            PCD8544_BUFFER(x2, y)|= _BV(y % 8);
         }
 
     } else if (color == 0) {
 
         for (uint8_t x = x1; x <= x2 && x < PCD8544_SCREEN_WIDTH; x++) {
-            PCD8544_BUFFER(x, y1)&= ~(1 << y1 % 8);
-            PCD8544_BUFFER(x, y2)&= ~(1 << y2 % 8);
+            PCD8544_BUFFER(x, y1)&= ~_BV(y1 % 8);
+            PCD8544_BUFFER(x, y2)&= ~_BV(y2 % 8);
         }
 
         for (uint8_t y = y1 + 1; y < y2 && y < PCD8544_SCREEN_HEIGHT; y++) {
-            PCD8544_BUFFER(x1, y)&= ~(1 << y % 8);
-            PCD8544_BUFFER(x2, y)&= ~(1 << y % 8);
+            PCD8544_BUFFER(x1, y)&= ~_BV(y % 8);
+            PCD8544_BUFFER(x2, y)&= ~_BV(y % 8);
         }
 
     } else {
 
         for (uint8_t x = x1; x <= x2 && x < PCD8544_SCREEN_WIDTH; x++) {
-            PCD8544_BUFFER(x, y1)^= (1 << y1 % 8);
-            PCD8544_BUFFER(x, y2)^= (1 << y2 % 8);
+            PCD8544_BUFFER(x, y1)^= _BV(y1 % 8);
+            PCD8544_BUFFER(x, y2)^= _BV(y2 % 8);
         }
 
         for (uint8_t y = y1 + 1; y < y2 && y < PCD8544_SCREEN_HEIGHT; y++) {
-            PCD8544_BUFFER(x1, y)^= (1 << y % 8);
-            PCD8544_BUFFER(x2, y)^= (1 << y % 8);
+            PCD8544_BUFFER(x1, y)^= _BV(y % 8);
+            PCD8544_BUFFER(x2, y)^= _BV(y % 8);
         }
     }
 
@@ -204,7 +208,7 @@ void PCD8544::strokeLine(int8_t x1, int8_t y1, int8_t x2, int8_t y2, uint8_t col
 
     int8_t ert, err = (dx > dy ? dx : -dy) / 2;
 
-    for (;;) {
+    for ( ; ; ) {
         setPixel(x1, y1, color);
         if (x1 == x2 && y1 == y2) break;
         ert = err;
@@ -253,14 +257,6 @@ void PCD8544::draw() {
 #endif
 }
 
-
-
-
-
-
-
-
-
 void PCD8544::drawImage(const uint8_t *image) {
 
     _command(PCD8544_SETYADDR);
@@ -275,9 +271,8 @@ void PCD8544::drawImage(const uint8_t *image) {
 
 void PCD8544::clearBuffer() {
 
-    for (uint16_t i = 0; i < PCD8544_BUFFER_LEN; i++) {
-        buffer[i] = 0;
-    }
+    memset(buffer, 0, PCD8544_BUFFER_LEN);
+
     _updateBoundingBox(0, 0, PCD8544_SCREEN_WIDTH - 1, PCD8544_SCREEN_HEIGHT - 1);
 }
 
@@ -288,13 +283,14 @@ void PCD8544::clear() {
 
     _start_data();
     for (uint16_t i = 0; i < PCD8544_BUFFER_LEN; i++) {
-        buffer[i] = 0;
         _write_data(0);
     }
     _end_data();
 
+    memset(buffer, 0, PCD8544_BUFFER_LEN);
+
 #ifdef PCD8544_USE_BOUNDINGBOX
-    // Invalidate next display() call
+    // Invalidate next draw() call
     boundMinY = 255;
     boundMaxY = 0;
 #endif
@@ -319,6 +315,7 @@ inline void PCD8544::_write_data(uint8_t data) {
         SPI.transfer(data);
     } else {
         // Software SPI
+        // shiftOut(_din, _sclk, MSBFIRST, data);
         for (uint8_t c = 128; c; c >>= 1) {
             cbi(P_SCLK, B_SCLK);
 
