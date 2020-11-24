@@ -1,0 +1,21 @@
+{
+    "name": "PCD8544",
+    "version": "1.0.0",
+    "url": "https://github.com/infusion/PCD8544",
+    "keywords": "PCD8544, lcd, display, nokia, 5110",
+    "description": "A driver for monochrome LCD display used for Nokia 5110 phones with Philips PCD8544 driver",
+    "include": "Arduino/PCD8544",
+    "authors": {
+        "name": "Robert Eisele",
+        "email": "robert@xarg.org"
+    },
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/infusion/PCD8544.git"
+    },
+    "dependencies": {
+        "frameworks": "arduino"
+    },
+    "frameworks": "arduino",
+    "platforms": ["atmelavr", "espressif", "espressif32", "teensy", "linux_arm"]
+}
