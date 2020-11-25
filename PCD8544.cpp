@@ -76,6 +76,11 @@ void PCD8544::setBias(uint8_t bias) {
 }
 
 void PCD8544::setTempCoeff(uint8_t temp) {
+
+    if (temp > 3) {
+        temp = 3;
+    }
+
     _command(PCD8544_FUNCTIONSET | PCD8544_EXTENDED_INSTRUCTION | PCD8544_ADDRESSING); // enter extended instructions
     _command(PCD8544_SETTEMP | temp);
     _command(PCD8544_FUNCTIONSET | PCD8544_BASIC_INSTRUCTION | PCD8544_ADDRESSING); // enter normal instructions
