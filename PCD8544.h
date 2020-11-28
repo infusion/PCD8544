@@ -181,7 +181,11 @@ public:
 
     void strokeRect(uint8_t x1, uint8_t y1, uint8_t x2, uint8_t y2, uint8_t color = 1);
 
+    void fillRect(uint8_t x1, uint8_t y1, uint8_t x2, uint8_t y2, uint8_t color = 1);
+
     void strokeCircle(uint8_t x0, uint8_t y0, uint8_t radius, uint8_t color = 1);
+
+    void fillCircle(uint8_t x0, uint8_t y0, uint8_t radius, uint8_t color = 1);
 
     void strokeLine(int8_t x1, int8_t y1, int8_t x2, int8_t y2, uint8_t color = 1);
 

@@ -53,7 +53,7 @@ void PCD8544::init(uint8_t contrast, uint8_t bias, uint8_t tempCoeff) {
     sbi(P_RST, B_RST); // Reset = 1
 
     // Set presets 
-    setContrast(contrast);
+    setContrast(contrast); // Set Vop
     setTempCoeff(tempCoeff);
     setBias(bias);
 
@@ -173,6 +173,48 @@ void PCD8544::strokeRect(uint8_t x1, uint8_t y1, uint8_t x2, uint8_t y2, uint8_t
     _updateBoundingBox(x1, y1, x2, y2);
 }
 
+void PCD8544::fillRect(uint8_t x1, uint8_t y1, uint8_t x2, uint8_t y2, uint8_t color) {
+
+    if (x1 > x2) {
+        uint8_t t = x2;
+        x2 = x1;
+        x1 = t;
+    }
+
+    if (y1 > y2) {
+        uint8_t t = y2;
+        y2 = y1;
+        y1 = t;
+    }
+
+    if (color == 1) {
+
+        for (uint8_t x = x1; x <= x2 && x < PCD8544_SCREEN_WIDTH; x++) {
+            for (uint8_t y = y1 + 1; y < y2 && y < PCD8544_SCREEN_HEIGHT; y++) {
+                PCD8544_BUFFER(x, y)|= _BV(y % 8);
+            }
+        }
+
+    } else if (color == 0) {
+
+        for (uint8_t x = x1; x <= x2 && x < PCD8544_SCREEN_WIDTH; x++) {
+            for (uint8_t y = y1 + 1; y < y2 && y < PCD8544_SCREEN_HEIGHT; y++) {
+                PCD8544_BUFFER(x, y)&=~_BV(y % 8);
+            }
+        }
+
+    } else {
+
+        for (uint8_t x = x1; x <= x2 && x < PCD8544_SCREEN_WIDTH; x++) {
+            for (uint8_t y = y1 + 1; y < y2 && y < PCD8544_SCREEN_HEIGHT; y++) {
+                PCD8544_BUFFER(x, y)^= _BV(y % 8);
+            }
+        }
+    }
+
+    _updateBoundingBox(x1, y1, x2, y2);
+}
+
 void PCD8544::strokeCircle(uint8_t x0, uint8_t y0, uint8_t radius, uint8_t color) {
 
     // https://en.wikipedia.org/wiki/Midpoint_circle_algorithm
@@ -195,13 +237,44 @@ void PCD8544::strokeCircle(uint8_t x0, uint8_t y0, uint8_t radius, uint8_t color
 
         if (err <= 0) {
             y++;
-            err += dy;
-            dy += 2;
+            err+= dy;
+            dy+= 2;
         }
         if (err > 0) {
             x--;
-            dx += 2;
-            err += dx - (radius << 1);
+            dx+= 2;
+            err+= dx - (radius << 1);
+        }
+    }
+}
+
+void PCD8544::fillCircle(uint8_t x0, uint8_t y0, uint8_t radius, uint8_t color) {
+
+    int8_t x = radius;
+    int8_t y = 0;
+    int8_t dx = 1 - (radius << 1);
+    int8_t dy = 0;
+    int8_t err = 0;
+
+    while (x >= y) {
+
+        for (int i = x0 - x; i <= x0 + x; i++) {
+            setPixel(i, y0 + y, color);
+            setPixel(i, y0 - y, color);
+        }
+        for (int i = x0 - y; i <= x0 + y; i++) {
+            setPixel(i, y0 + x, color);
+            setPixel(i, y0 - x, color);
+        }
+
+        y++;
+        err+= dy;
+        dy+= 2;
+
+        if (((err << 1) + dx) > 0) {
+            x--;
+            err+= dx;
+            dx+= 2;
         }
     }
 }
