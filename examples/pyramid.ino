@@ -27,7 +27,11 @@ void loop() {
     px = x;
     py = y;
   }
+
   rot+= PI / 120.0;
+
+  display.fillRect(0, 14, 84, 48,2);
+
   display.draw();
   delay(10);
 }
