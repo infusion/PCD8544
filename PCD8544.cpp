@@ -1,3 +1,10 @@
+/**
+ * Philips PCD8544 LCD Driver v0.0.1 08/06/2014
+ * https://www.xarg.org/2014/06/how-to-use-a-nokia-5110-graphical-display-with-arduino/
+ *
+ * Copyright (c) 2014, Robert Eisele (robert@xarg.org)
+ * Dual licensed under the MIT or GPL Version 2 licenses.
+ **/
 
 #include "PCD8544.h"
 
@@ -36,9 +43,14 @@ void PCD8544::init(uint8_t contrast, uint8_t bias, uint8_t tempCoeff) {
         pinMode(_sce, OUTPUT);
 
     // toggle RST to reset to a known state
-    cbi(P_RST, B_RST);
+    sbi(P_DC, B_DC); // Mode = command
+    sbi(P_DIN, B_DIN); // DIN = 1
+    sbi(P_SCLK, B_SCLK); // CLK = 1
+    sbi(P_SCE, B_SCE); // Unselect chip
+
+    cbi(P_RST, B_RST); // Reset = 0
     delay(10);
-    sbi(P_RST, B_RST);
+    sbi(P_RST, B_RST); // Reset = 1
 
     // Set presets 
     setContrast(contrast);
@@ -55,35 +67,28 @@ void PCD8544::init(uint8_t contrast, uint8_t bias, uint8_t tempCoeff) {
 
 void PCD8544::setContrast(uint8_t contrast) {
 
-    if (contrast > 127) {
-        contrast = 127;
-    }
-
     _command(PCD8544_FUNCTIONSET | PCD8544_EXTENDED_INSTRUCTION | PCD8544_ADDRESSING); // enter extended instructions
-    _command(PCD8544_SETVOP | contrast);
+    _command(PCD8544_SETVOP | (contrast & 127));
     _command(PCD8544_FUNCTIONSET | PCD8544_BASIC_INSTRUCTION | PCD8544_ADDRESSING); // enter normal instructions
 }
 
 void PCD8544::setBias(uint8_t bias) {
 
-    if (bias > 7) {
-        bias = 7;
-    }
-
     _command(PCD8544_FUNCTIONSET | PCD8544_EXTENDED_INSTRUCTION | PCD8544_ADDRESSING); // enter extended instructions
-    _command(PCD8544_SETBIAS | bias);
+    _command(PCD8544_SETBIAS | (bias & 7));
     _command(PCD8544_FUNCTIONSET | PCD8544_BASIC_INSTRUCTION | PCD8544_ADDRESSING); // enter normal instructions
 }
 
 void PCD8544::setTempCoeff(uint8_t temp) {
 
-    if (temp > 3) {
-        temp = 3;
-    }
-
     _command(PCD8544_FUNCTIONSET | PCD8544_EXTENDED_INSTRUCTION | PCD8544_ADDRESSING); // enter extended instructions
-    _command(PCD8544_SETTEMP | temp);
+    _command(PCD8544_SETTEMP | (temp & 3));
     _command(PCD8544_FUNCTIONSET | PCD8544_BASIC_INSTRUCTION | PCD8544_ADDRESSING); // enter normal instructions
+}
+
+void PCD8544::setPower(bool on) {
+    // In basic instruction mode!
+    _command(PCD8544_FUNCTIONSET | (on ? PCD8544_POWER_UP : PCD8544_POWER_DOWN));
 }
 
 void PCD8544::setDisplayMode(pcd8544_display_t mode) {
@@ -320,15 +325,15 @@ inline void PCD8544::_write_data(uint8_t data) {
         SPI.transfer(data);
     } else {
         // Software SPI
-        // shiftOut(_din, _sclk, MSBFIRST, data);
+        // shiftOut(_din, _sclk, MSBFIRST, data):
         for (uint8_t c = 128; c; c >>= 1) {
-            cbi(P_SCLK, B_SCLK);
 
             if (data & c)
                 sbi(P_DIN, B_DIN);
             else
                 cbi(P_DIN, B_DIN);
 
+            cbi(P_SCLK, B_SCLK);
             sbi(P_SCLK, B_SCLK);
         }
     }
@@ -352,9 +357,7 @@ inline void PCD8544::_command(uint8_t data) {
     // Write byte
     _write_data(data);
 
-    if (_sce > 0) {
-        sbi(P_SCE, B_SCE); // SCE HIGH, end transmission
-    }
+    _end_data();
 }
 
 inline bool PCD8544::_hasHardwareSPI() {

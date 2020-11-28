@@ -1,3 +1,10 @@
+/**
+ * Philips PCD8544 LCD Driver v0.0.1 08/06/2014
+ * https://www.xarg.org/2014/06/how-to-use-a-nokia-5110-graphical-display-with-arduino/
+ *
+ * Copyright (c) 2014, Robert Eisele (robert@xarg.org)
+ * Dual licensed under the MIT or GPL Version 2 licenses.
+ **/
 
 #ifndef _PCD8544_H
 #define _PCD8544_H
@@ -115,14 +122,12 @@ class PCD8544 {
 
 private:
 
-    // Pin references
-    PinReg *P_RST, *P_SCE, *P_DC, *P_DIN, *P_SCLK;
-
-    // Pin masks
-    PinMask B_RST, B_SCE, B_DC, B_DIN, B_SCLK;
-
     // Pin numbers
     int8_t _rst, _sce, _dc, _din, _sclk;
+
+    // Pin references + masks (unwrapped digitalWrite() function for speed)
+    PinReg *P_RST, *P_SCE, *P_DC, *P_DIN, *P_SCLK;
+    PinMask B_RST, B_SCE, B_DC, B_DIN, B_SCLK;
 
     // TODO: ship a funny default image
     uint8_t buffer[PCD8544_SCREEN_WIDTH * PCD8544_SCREEN_HEIGHT / 8] = {0};
@@ -163,6 +168,8 @@ public:
 
     // Temp: 0-3
     void setTempCoeff(uint8_t temp);
+
+    void setPower(bool on);
 
     void setDisplayMode(pcd8544_display_t mode);
 
