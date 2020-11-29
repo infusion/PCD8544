@@ -118,6 +118,14 @@ typedef enum {
     PCD8544_DISPLAY_INVERTED = 5
 } pcd8544_display_t;
 
+typedef enum {
+    FONT_MODE_DEFAULT = 0,
+    FONT_MODE_TRANSPARENT = 1,
+    FONT_MODE_INVERTED = 2,
+    FONT_MODE_AUTO_LINEBREAK = 4,
+    FONT_MODE_IGNORE_NEWLINE = 8
+} pcd8544_fontmode_t;
+
 class PCD8544 {
 
 private:
@@ -131,6 +139,8 @@ private:
 
     // TODO: ship a funny default image
     uint8_t buffer[PCD8544_SCREEN_WIDTH * PCD8544_SCREEN_HEIGHT / 8] = {0};
+
+    uint8_t *_font;
 
 #ifdef PCD8544_USE_BOUNDINGBOX
     uint8_t boundMinX, boundMaxX, boundMinY, boundMaxY;
@@ -147,15 +157,15 @@ private:
 public:
 
     // Software SPI with explicit CS pin
-    PCD8544(int8_t rst, int8_t sce, int8_t dc, int8_t din, int8_t sclk) : _rst(rst), _sce(sce), _dc(dc), _din(din), _sclk(sclk) {
+    PCD8544(int8_t rst, int8_t sce, int8_t dc, int8_t din, int8_t sclk) : _rst(rst), _sce(sce), _dc(dc), _din(din), _sclk(sclk), _font(NULL) {
     }
 
     // Software SPI with CS tied to ground. Saves a pin but the other pins can't be shared with other hardware
-    PCD8544(int8_t rst, int8_t dc, int8_t din, int8_t sclk) : _rst(rst), _sce(-1), _dc(dc), _din(din), _sclk(sclk) {
+    PCD8544(int8_t rst, int8_t dc, int8_t din, int8_t sclk) : _rst(rst), _sce(-1), _dc(dc), _din(din), _sclk(sclk), _font(NULL) {
     }
 
     // Hardware SPI with hardware controlled SCK (SCLK) and MOSI (DIN). SCE is controlled by IO pin
-    PCD8544(int8_t rst, int8_t sce, int8_t dc) : _rst(rst), _sce(sce), _dc(dc), _din(-1), _sclk(-1) {
+    PCD8544(int8_t rst, int8_t sce, int8_t dc) : _rst(rst), _sce(sce), _dc(dc), _din(-1), _sclk(-1), _font(NULL) {
     }
 
     void init(uint8_t contrast = 60, uint8_t bias = 0x03, uint8_t tempCoeff = 0x02);
@@ -188,6 +198,16 @@ public:
     void fillCircle(uint8_t x0, uint8_t y0, uint8_t radius, uint8_t color = 1);
 
     void strokeLine(int8_t x1, int8_t y1, int8_t x2, int8_t y2, uint8_t color = 1);
+
+    // Text Methods
+
+    void setFont(uint8_t *font);
+
+    void print(char c, int16_t x, int16_t y, pcd8544_fontmode_t mode = FONT_MODE_DEFAULT);
+
+    void print(char *c, int16_t x, int16_t y, pcd8544_fontmode_t mode = FONT_MODE_DEFAULT);
+
+    void print(String st, int16_t x, int16_t y, pcd8544_fontmode_t mode = FONT_MODE_DEFAULT);
 
     // Invoke Methods
 

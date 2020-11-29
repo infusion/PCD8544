@@ -359,6 +359,97 @@ void PCD8544::clearBuffer() {
     _updateBoundingBox(0, 0, PCD8544_SCREEN_WIDTH - 1, PCD8544_SCREEN_HEIGHT - 1);
 }
 
+void PCD8544::print(char c, int16_t x0, int16_t y0, pcd8544_fontmode_t mode) {
+
+    if (_font == NULL || c < _font[2] || _font[1] % 8 != 0) {
+        // TODO: Somehow notify that the font was not selected or is invalid
+        return;
+    }
+
+    const uint8_t SKIP = 4;
+
+    uint8_t xSize = _font[0];
+    uint8_t ySize = _font[1];
+    uint8_t offset = _font[2];
+
+    uint8_t tr = (mode >> 0); // FONT_MODE_TRANSPARENT
+    uint8_t in = (mode >> 1); // FONT_MODE_INVERTED
+
+    /*
+    in	tr  bit	res
+    ---------------
+    A   B   C   R
+    0	0	0	0
+    0	0	1	1
+    0	1	0	dk
+    0	1	1	1
+    ---------------
+    1	0	0	1
+    1	0	1	0
+    1	1	0	1
+    1	1	1	dk
+
+    => res = !A C OR A !C <=> A XOR C
+    => !dk = !B OR !A C OR A !C <=> !dk = !B OR (A XOR C) <=> !B OR res
+    */
+
+    for (uint8_t x = 0; x < xSize; x++) {
+
+        if (x + x0 < 0 || x + x0 >= PCD8544_SCREEN_WIDTH) continue;
+
+        for (uint8_t row = 0; row < (ySize / 8); row++) {
+
+            uint8_t fn = _font[SKIP + (ySize / 8) * xSize * (c - offset) + x + row * xSize];
+
+            for (uint8_t y = 0; y < 8; y++) {
+
+                uint8_t res = in ^ (fn >> y);
+
+                if (((res | ~tr) & 1)) {
+                    setPixel(x + x0, y + y0 + row * 8, res & 1);
+                }
+            }
+        }
+    }
+}
+
+void PCD8544::print(char *c, int16_t x, int16_t y, pcd8544_fontmode_t mode) {
+
+    if (_font == NULL) {
+        return;
+    }
+
+    uint8_t xSize = _font[0];
+    uint8_t ySize = _font[1];
+
+    uint16_t xOff = 0;
+    uint16_t yOff = 0;
+
+    while (*c != '\0') {
+
+        if (*c == '\n') {
+            if ((mode & FONT_MODE_IGNORE_NEWLINE) == 0) {
+                xOff = 0;
+                yOff+= ySize;
+            } else {
+                print(' ', x + xOff, y + yOff, mode);
+                xOff+= xSize;
+            }
+        } else {
+            print(*c, x + xOff, y + yOff, mode);
+            xOff+= xSize;
+        }
+        c++;
+    }
+}
+
+void PCD8544::print(String st, int16_t x, int16_t y, pcd8544_fontmode_t mode) {
+
+    char buf[st.length() + 1];
+    st.toCharArray(buf, st.length() + 1);
+    print(buf, x, y, mode);
+}
+
 void PCD8544::clear() {
 
     _command(PCD8544_SETYADDR);
@@ -379,6 +470,9 @@ void PCD8544::clear() {
 #endif
 }
 
+void PCD8544::setFont(uint8_t *font) {
+    _font = font;
+}
 
 // Private methods
 
