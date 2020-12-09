@@ -59,10 +59,8 @@ void PCD8544::init(uint8_t contrast, uint8_t bias, uint8_t tempCoeff) {
 
     setDisplayMode(PCD8544_DISPLAY_NORMAL);
 
-    _updateBoundingBox(0, 0, PCD8544_SCREEN_WIDTH - 1, PCD8544_SCREEN_HEIGHT - 1);
-
     // Clear Screen
-    draw();
+    update();
 }
 
 void PCD8544::setContrast(uint8_t contrast) {
@@ -108,7 +106,6 @@ void PCD8544::setPixel(uint8_t x, uint8_t y, uint8_t color) {
     else
         PCD8544_BUFFER(x, y)^= _BV(y % 8);
 
-    _updateBoundingBox(x, y, x, y);
 }
 
 uint8_t PCD8544::getPixel(uint8_t x, uint8_t y) {
@@ -119,19 +116,10 @@ uint8_t PCD8544::getPixel(uint8_t x, uint8_t y) {
     return (PCD8544_BUFFER(x, y) >> (y % 8)) % 2;
 }
 
-void PCD8544::strokeRect(uint8_t x1, uint8_t y1, uint8_t x2, uint8_t y2, uint8_t color) {
+void PCD8544::strokeRect(uint8_t x1, uint8_t y1, uint8_t width, uint8_t height, uint8_t color) {
 
-    if (x1 > x2) {
-        uint8_t t = x2;
-        x2 = x1;
-        x1 = t;
-    }
-
-    if (y1 > y2) {
-        uint8_t t = y2;
-        y2 = y1;
-        y1 = t;
-    }
+    uint8_t x2 = x1 + width - 1;
+    uint8_t y2 = y1 + height - 1;
 
     if (color == 1) {
 
@@ -170,27 +158,17 @@ void PCD8544::strokeRect(uint8_t x1, uint8_t y1, uint8_t x2, uint8_t y2, uint8_t
         }
     }
 
-    _updateBoundingBox(x1, y1, x2, y2);
 }
 
-void PCD8544::fillRect(uint8_t x1, uint8_t y1, uint8_t x2, uint8_t y2, uint8_t color) {
+void PCD8544::fillRect(uint8_t x1, uint8_t y1, uint8_t width, uint8_t height, uint8_t color) {
 
-    if (x1 > x2) {
-        uint8_t t = x2;
-        x2 = x1;
-        x1 = t;
-    }
-
-    if (y1 > y2) {
-        uint8_t t = y2;
-        y2 = y1;
-        y1 = t;
-    }
+    uint8_t x2 = x1 + width - 1;
+    uint8_t y2 = y1 + height - 1;
 
     if (color == 1) {
 
         for (uint8_t x = x1; x <= x2 && x < PCD8544_SCREEN_WIDTH; x++) {
-            for (uint8_t y = y1 + 1; y < y2 && y < PCD8544_SCREEN_HEIGHT; y++) {
+            for (uint8_t y = y1; y <= y2 && y < PCD8544_SCREEN_HEIGHT; y++) {
                 PCD8544_BUFFER(x, y)|= _BV(y % 8);
             }
         }
@@ -198,7 +176,7 @@ void PCD8544::fillRect(uint8_t x1, uint8_t y1, uint8_t x2, uint8_t y2, uint8_t c
     } else if (color == 0) {
 
         for (uint8_t x = x1; x <= x2 && x < PCD8544_SCREEN_WIDTH; x++) {
-            for (uint8_t y = y1 + 1; y < y2 && y < PCD8544_SCREEN_HEIGHT; y++) {
+            for (uint8_t y = y1; y <= y2 && y < PCD8544_SCREEN_HEIGHT; y++) {
                 PCD8544_BUFFER(x, y)&=~_BV(y % 8);
             }
         }
@@ -206,13 +184,12 @@ void PCD8544::fillRect(uint8_t x1, uint8_t y1, uint8_t x2, uint8_t y2, uint8_t c
     } else {
 
         for (uint8_t x = x1; x <= x2 && x < PCD8544_SCREEN_WIDTH; x++) {
-            for (uint8_t y = y1 + 1; y < y2 && y < PCD8544_SCREEN_HEIGHT; y++) {
+            for (uint8_t y = y1; y <= y2 && y < PCD8544_SCREEN_HEIGHT; y++) {
                 PCD8544_BUFFER(x, y)^= _BV(y % 8);
             }
         }
     }
 
-    _updateBoundingBox(x1, y1, x2, y2);
 }
 
 void PCD8544::strokeCircle(uint8_t x0, uint8_t y0, uint8_t radius, uint8_t color) {
@@ -306,29 +283,8 @@ void PCD8544::strokeLine(int8_t x1, int8_t y1, int8_t x2, int8_t y2, uint8_t col
     }
 }
 
-void PCD8544::draw() {
+void PCD8544::update() {
 
-#ifdef PCD8544_USE_BOUNDINGBOX
-
-    for (uint8_t y = boundMinY; y <= boundMaxY; y += 8) {
-
-        uint8_t l = y / 8;
-
-        _command(PCD8544_SETYADDR | l);
-        _command(PCD8544_SETXADDR | boundMinX);
-
-        _start_data();
-        for (uint8_t x = boundMinX; x <= boundMaxX; x++) {
-            _write_data(PCD8544_BUFFER_LINE(x, l));
-        }
-        _end_data();
-    }
-
-    // Invalidate next draw() call
-    boundMinY = 255;
-    boundMaxY = 0;
-
-#else
     _command(PCD8544_SETYADDR);
     _command(PCD8544_SETXADDR);
 
@@ -337,10 +293,9 @@ void PCD8544::draw() {
         _write_data(buffer[i]);
     }
     _end_data();
-#endif
 }
 
-void PCD8544::drawImage(const uint8_t *image) {
+void PCD8544::updateImage(const uint8_t *image) {
 
     _command(PCD8544_SETYADDR);
     _command(PCD8544_SETXADDR);
@@ -355,8 +310,6 @@ void PCD8544::drawImage(const uint8_t *image) {
 void PCD8544::clearBuffer() {
 
     memset(buffer, 0, PCD8544_BUFFER_LEN);
-
-    _updateBoundingBox(0, 0, PCD8544_SCREEN_WIDTH - 1, PCD8544_SCREEN_HEIGHT - 1);
 }
 
 void PCD8544::print(char c, int16_t x0, int16_t y0, pcd8544_fontmode_t mode) {
@@ -462,12 +415,6 @@ void PCD8544::clear() {
     _end_data();
 
     memset(buffer, 0, PCD8544_BUFFER_LEN);
-
-#ifdef PCD8544_USE_BOUNDINGBOX
-    // Invalidate next draw() call
-    boundMinY = 255;
-    boundMaxY = 0;
-#endif
 }
 
 void PCD8544::setFont(uint8_t *font) {
@@ -529,13 +476,4 @@ inline void PCD8544::_command(uint8_t data) {
 
 inline bool PCD8544::_hasHardwareSPI() {
     return _din == -1 && _sclk == -1;
-}
-
-inline void PCD8544::_updateBoundingBox(uint8_t xmin, uint8_t ymin, uint8_t xmax, uint8_t ymax) {
-#ifdef PCD8544_USE_BOUNDINGBOX
-    if (xmin < boundMinX) boundMinX = xmin;
-    if (xmax > boundMaxX) boundMaxX = xmax;
-    if (ymin < boundMinY) boundMinY = ymin;
-    if (ymax > boundMaxY) boundMaxY = ymax;
-#endif
 }

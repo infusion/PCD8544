@@ -45,7 +45,7 @@ void setup() {
 
 void loop() {
 
-  display.drawImage(image);
+  display.updateImage(image);
 
   delay(2000);
   display.setDisplayMode(PCD8544_DISPLAY_INVERTED);

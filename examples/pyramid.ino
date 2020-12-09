@@ -32,6 +32,6 @@ void loop() {
 
   display.fillRect(0, 14, 84, 48,2);
 
-  display.draw();
+  display.update();
   delay(10);
 }

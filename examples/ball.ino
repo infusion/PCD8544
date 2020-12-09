@@ -3,10 +3,10 @@
 PCD8544 display(7, 6, 5, 4, 3);
 
 float radius = 6;
-float x = random(R, 84 - 2 * radius);
-float y = random(R, 48 - 2 * radius);
-float dx = random(0, 10) / 10.0 - 0.5;
-float dy = random(0, 10) / 10.0 - 0.5;
+float x = random(radius, 84 - 2 * radius);
+float y = random(radius, 48 - 2 * radius);
+float dx = random(0, 10) / 5.0 - 1.;
+float dy = random(0, 10) / 5.0 - 1.;
 
 void setup() {
 
@@ -21,7 +21,7 @@ void loop() {
   y+= dy;
 
   if (x >= 84 - radius) {
-    X = 84 - radius;
+    x = 84 - radius;
     dx = -dx;
   } else if (x <= radius) {
     x = radius;
@@ -36,9 +36,8 @@ void loop() {
     dy = -dy;
   }
  
-  display.strokeCircle(x, y, radius, 1);
-  display.draw();
+  display.fillCircle(x, y, radius, 1);
+  display.update();
 
   delay(50);
 }
-

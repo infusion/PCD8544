@@ -21,7 +21,6 @@ void loop() {
     display.setPixel(i, 20 * sin(5 * (i * PI / 180 + pos)) + 23);
   }
   pos+= PI / 300.0;
-  display.draw();
+  display.update();
   delay(50);
 }
-

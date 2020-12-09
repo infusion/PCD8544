@@ -78,8 +78,6 @@ typedef uint32_t PinMask;
 #define _BV(x) (1 << (x))
 #endif
 
-// When defined, only changed pixels within the bunding box are updated
-#define PCD8544_USE_BOUNDINGBOX
 
 #define PCD8544_SCREEN_WIDTH           84
 #define PCD8544_SCREEN_HEIGHT          48
@@ -142,17 +140,12 @@ private:
 
     uint8_t *_font;
 
-#ifdef PCD8544_USE_BOUNDINGBOX
-    uint8_t boundMinX, boundMaxX, boundMinY, boundMaxY;
-#endif
-
     inline void _start_data();
     inline void _write_data(uint8_t data);
     inline void _end_data();
     inline void _command(uint8_t data);
 
     inline bool _hasHardwareSPI();
-    inline void _updateBoundingBox(uint8_t xmin, uint8_t ymin, uint8_t xmax, uint8_t ymax);
 
 public:
 
@@ -189,9 +182,9 @@ public:
 
     uint8_t getPixel(uint8_t x, uint8_t y);
 
-    void strokeRect(uint8_t x1, uint8_t y1, uint8_t x2, uint8_t y2, uint8_t color = 1);
+    void strokeRect(uint8_t x1, uint8_t y1, uint8_t width, uint8_t height, uint8_t color = 1);
 
-    void fillRect(uint8_t x1, uint8_t y1, uint8_t x2, uint8_t y2, uint8_t color = 1);
+    void fillRect(uint8_t x1, uint8_t y1, uint8_t width, uint8_t height, uint8_t color = 1);
 
     void strokeCircle(uint8_t x0, uint8_t y0, uint8_t radius, uint8_t color = 1);
 
@@ -211,9 +204,9 @@ public:
 
     // Invoke Methods
 
-    void draw();
+    void update();
 
-    void drawImage(const uint8_t *image);
+    void updateImage(const uint8_t *image);
 
     void clearBuffer();
 

@@ -16,8 +16,8 @@ void loop() {
   
   display.print("Hello World!", 10, 20);
   
-  display.draw();
+  display.update();
   
-  delay(500);
+  delay(2000);
 }
 

@@ -20,7 +20,7 @@ float alpha = 0;
 float da = +.2;
 
 int16_t textPos = 0;
-String text = "Welcome on the Nokia 5110 Display ... visit www.xarg.org ;-)";
+String text = "Have a nice day. And when you are on it - visit www.xarg.org ;-)";
 
 void loop() {
   
@@ -56,7 +56,7 @@ void loop() {
 
   display.print(text, textPos, Y - 4, FONT_MODE_TRANSPARENT);
 
-  display.draw(); 
+  display.update(); 
 
   delay(100);
 }
