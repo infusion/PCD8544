@@ -51,7 +51,7 @@ void loop() {
   textPos-= 2;
   
   if (textPos < - (int16_t) (text.length() * 6)) {
-    textPos = 84;
+    textPos = PCD8544_SCREEN_WIDTH;
   }
 
   display.print(text, textPos, Y - 4, FONT_MODE_TRANSPARENT);

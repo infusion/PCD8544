@@ -30,7 +30,7 @@ void loop() {
 
   rot+= PI / 120.0;
 
-  display.fillRect(0, 14, 84, 48,2);
+  display.fillRect(0, 14, PCD8544_SCREEN_WIDTH, PCD8544_SCREEN_HEIGHT, 2);
 
   display.update();
   delay(10);
