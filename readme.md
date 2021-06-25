@@ -33,38 +33,38 @@ PCD8544(int8_t rst, int8_t sce, int8_t dc)
 
 ## Methods
 
-###Initialize the module with default settings
+### Initialize the module with default settings
 
 ```
 init(uint8_t contrast = 60, uint8_t bias = 0x03, uint8_t tempCoeff = 0x02)
 ```
 
 
-###Set contrast within interval `[0-127]`
+### Set contrast within interval `[0-127]`
 
 ```
 setContrast(uint8_t contrast)
 ```
 
-###Set bias within interval [0-7]
+### Set bias within interval [0-7]
 
 ```
 setBias(uint8_t bias)
 ```
 
-###Set temperature coefficent within interval [0-3]
+### Set temperature coefficent within interval [0-3]
 
 ```
 setTempCoeff(uint8_t temp)
 ```
 
-###Turn modul on of off
+### Turn modul on of off
 
 ```
 setPower(bool on)
 ```
 
-###Set display mode
+### Set display mode
 
 - PCD8544_DISPLAY_BLANK: ALl pixels blank
 - PCD8544_DISPLAY_NORMAL: Normal operation
@@ -75,7 +75,7 @@ setPower(bool on)
 setDisplayMode(pcd8544_display_t mode)
 ```
 
-###Set a pixel
+### Set a pixel
 
 ```
 setPixel(uint8_t x, uint8_t y, uint8_t color = 1)
@@ -117,7 +117,7 @@ fillCircle(uint8_t x0, uint8_t y0, uint8_t radius, uint8_t color = 1)
 strokeLine(int8_t x1, int8_t y1, int8_t x2, int8_t y2, uint8_t color = 1)
 ```
 
-###Set a font face
+### Set a font face
 
 ```
 setFont(uint8_t *font)
@@ -150,7 +150,7 @@ print(String st, int16_t x, int16_t y, pcd8544_fontmode_t mode = FONT_MODE_DEFAU
 update()
 ```
 
-###Send a bitmap to the device
+### Send a bitmap to the device
 
 ```
 updateImage(const uint8_t *image)
