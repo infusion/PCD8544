@@ -58,7 +58,7 @@ setBias(uint8_t bias)
 setTempCoeff(uint8_t temp)
 ```
 
-### Turn modul on of off
+### Turn module on or off
 
 ```
 setPower(bool on)
@@ -66,7 +66,7 @@ setPower(bool on)
 
 ### Set display mode
 
-- PCD8544_DISPLAY_BLANK: ALl pixels blank
+- PCD8544_DISPLAY_BLANK: All pixels blank
 - PCD8544_DISPLAY_NORMAL: Normal operation
 - PCD8544_DISPLAY_ALL_ON: All pixels set
 - PCD8544_DISPLAY_INVERTED: All pixels inverted
